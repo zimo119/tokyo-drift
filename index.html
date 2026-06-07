@@ -1273,6 +1273,26 @@
                 if(Math.abs(relativeVelocity) > 5) {
                     playCrashSound(Math.abs(relativeVelocity));
                 }
+
+                // === HIGH-SPEED CRASH SPARK BURST (撞击爆发火花特效) ===
+                if(Math.abs(relativeVelocity) > 2) {
+                    const contact = e.contact;
+                    let worldPoint = new CANNON.Vec3();
+                    if (contact.bi === chassisBody) {
+                        chassisBody.position.vadd(contact.ri, worldPoint);
+                    } else {
+                        chassisBody.position.vadd(contact.rj, worldPoint);
+                    }
+                    const sparkPos = new THREE.Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
+                    const carVel = new THREE.Vector3(chassisBody.velocity.x, chassisBody.velocity.y, chassisBody.velocity.z);
+                    const forwardDir = new THREE.Vector3(0, 0, 1).applyQuaternion(carVisuals.quaternion);
+                    
+                    // Spark count scales with impact force
+                    const burstCount = Math.min(20, Math.floor(Math.abs(relativeVelocity) * 2.5));
+                    for (let i = 0; i < burstCount; i++) {
+                        spawnSparks(sparkPos, forwardDir, carVel);
+                    }
+                }
             });
 
             chassisBody.angularDamping = 0.92; 
@@ -1650,6 +1670,7 @@
                         if (window.prevDot < 0 && currentDot >= 0 && carPos.distanceTo(window.startLine.pos) < 120) {
                             
                             if (raceStarted) {
+                                // Must pass all intermediate checkpoints to qualify for lap completion
                                 if (window.checkpoints && window.nextCheckpointIndex === window.checkpoints.length) {
                                     if (lapTime > 5) {
                                         if (lapTime < bestTime) bestTime = lapTime;
@@ -1696,8 +1717,7 @@
                 let targetSteer = rawTargetSteer * speedFactor;
                 let angularY = chassisBody.angularVelocity.y; 
                 
-                // === NO REVERSE STEERING BUG FIX ===
-                // Zhiyou zai xiangqian xingshi shi qiyong fanda he wending fuzhu. Daoche shi jinyong, fanzhi lunzi luanbai.
+                // Steering auxiliary & counter-steer physics exactly reverted to previous stable version
                 if (isMovingForward) {
                     if (!keys.left && !keys.right && speedKmh > 15) {
                         targetSteer = -angularY * 1.5; 
@@ -1906,6 +1926,33 @@
             if (isPlaying && !isPaused && isBraking && speedKmh > 10) {
                 for (let w = 0; w < 4; w++) {
                     spawnSmoke(wheelMeshes[w].position, currentVel, speedKmh, true);
+                }
+            }
+
+            // === CONTINUOUS WALL SCRAPING DETECTION & SPARK EMISSION (持续擦墙火花粒子生成) ===
+            if (isPlaying && !isPaused && speedKmh > 15) {
+                for (let i = 0; i < world.contacts.length; i++) {
+                    const c = world.contacts[i];
+                    if (c.bi === chassisBody || c.bj === chassisBody) {
+                        const otherBody = (c.bi === chassisBody) ? c.bj : c.bi;
+                        // Trigger scraping sparks only against wall elements to maintain accuracy
+                        if (otherBody.material === wallMat) {
+                            let worldPoint = new CANNON.Vec3();
+                            if (c.bi === chassisBody) {
+                                chassisBody.position.vadd(c.ri, worldPoint);
+                            } else {
+                                chassisBody.position.vadd(c.rj, worldPoint);
+                            }
+                            const sparkPos = new THREE.Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
+                            const carVel = new THREE.Vector3(chassisBody.velocity.x, chassisBody.velocity.y, chassisBody.velocity.z);
+                            const forwardDir = new THREE.Vector3(0, 0, 1).applyQuaternion(carVisuals.quaternion);
+                            
+                            // Emit a continuous stream of sparks at the scraping point
+                            if (Math.random() < 0.35) {
+                                spawnSparks(sparkPos, forwardDir, carVel);
+                            }
+                        }
+                    }
                 }
             }
 
