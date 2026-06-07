@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Muscle Drift</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a2e; font-family: 'Segoe UI', sans-serif; }
+        
+        /* === Modern Racing Main Menu === */
+        #main-menu { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(135deg, rgba(15,15,20,0.9) 0%, rgba(30,20,25,0.7) 100%); 
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            z-index: 1999; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; 
+            padding-left: 8%; box-sizing: border-box; transition: opacity 0.5s ease;
+        }
+        
+        .menu-title { 
+            font-size: 72px; font-weight: 900; color: #fff; font-style: italic; 
+            text-transform: uppercase; margin-bottom: 5px; letter-spacing: 4px; 
+            transform: skewX(-12deg); 
+            text-shadow: 0 0 30px rgba(255,51,0,0.6), 5px 5px 0px #ff3300;
+        }
+        
+        .menu-subtitle { 
+            font-size: 20px; color: #ffaa00; margin-bottom: 30px; font-weight: bold; 
+            letter-spacing: 6px; transform: skewX(-12deg); text-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+            text-transform: uppercase;
+        }
+
+        /* === Track Selector === */
+        .track-selector-container {
+            margin-bottom: 30px; transform: skewX(-15deg); display: flex; align-items: center;
+        }
+        .track-selector-label {
+            color: #fff; font-size: 20px; font-weight: 900; font-style: italic; margin-right: 15px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5); letter-spacing: 2px;
+        }
+        #main-track-select {
+            background: rgba(0, 0, 0, 0.7); color: #00ffcc; font-size: 20px; font-weight: bold; font-style: italic;
+            border: 2px solid #00ffcc; padding: 8px 15px; outline: none; cursor: pointer;
+            box-shadow: 0 0 15px rgba(0,255,204,0.3); letter-spacing: 1px; text-transform: uppercase;
+        }
+        #main-track-select option { background: #111; color: #fff; }
+        
+        .menu-btn { 
+            background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 24px; font-weight: 900; 
+            font-style: italic; border: 3px solid #333; padding: 12px 40px; 
+            margin-bottom: 15px; cursor: pointer; text-transform: uppercase; 
+            transform: skewX(-15deg); transition: all 0.3s ease; position: relative; overflow: hidden;
+            letter-spacing: 2px;
+        }
+        
+        .menu-btn::before { 
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; 
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); 
+            transition: all 0.4s ease; z-index: 1;
+        }
+        
+        .menu-btn:hover { border-color: #ff3300; text-shadow: 0 0 10px #ff3300; transform: skewX(-15deg) translateX(20px); }
+        .menu-btn:hover::before { left: 100%; }
+        
+        #btn-play { background: #ff3300; color: #111; border-color: #ff3300; box-shadow: 0 0 20px rgba(255,51,0,0.4); }
+        #btn-play:hover { background: #ff5500; color: #fff; text-shadow: 0 0 15px #fff; border-color: #fff; box-shadow: 0 0 30px rgba(255,85,0,0.8); }
+
+        /* === Start Overlay === */
+        #start-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); z-index: 2000; color: #ffaa00; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            cursor: pointer; text-shadow: 0 0 20px #ffaa00; 
+        }
+        #start-overlay h1 { font-size: 56px; margin-bottom: 10px; font-style: italic; }
+
+        /* === Garage Menu === */
+        #garage-menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 1999; display: none; flex-direction: column; justify-content: flex-start; align-items: center; 
+            padding-top: 10vh; background: radial-gradient(circle at bottom, rgba(0,255,204,0.1), transparent 60%);
+        }
+        #garage-car-name { font-size: 64px; text-shadow: 0 0 25px rgba(0,255,204,0.6), 5px 5px 0px #005544; color: #fff; font-weight: 900; font-style: italic; letter-spacing: 4px;}
+        #garage-controls { position: absolute; bottom: 60px; display: flex; gap: 40px; }
+
+        /* === Settings Menu === */
+        #settings-menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(10,10,15,0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            z-index: 2001; display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .settings-panel {
+            background: rgba(30,30,40,0.8); padding: 25px 40px; border-radius: 15px; border: 2px solid #555;
+            width: 600px; max-width: 90%; box-shadow: 0 0 30px rgba(0,0,0,0.85);
+        }
+        .settings-group { margin-bottom: 20px; }
+        .settings-group h3 { color: #ff3300; font-style: italic; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 15px; letter-spacing: 2px; font-size: 18px; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #ddd; font-size: 16px; font-weight: bold; }
+        .setting-item input[type="range"] { width: 180px; accent-color: #00ffcc; cursor: pointer; }
+        .setting-item select { background: #222; color: #00ffcc; border: 1px solid #00ffcc; padding: 5px 10px; font-size: 14px; font-weight: bold; font-style: italic; border-radius: 4px; outline: none; cursor: pointer; }
+        .setting-item select option { background: #222; color: #fff; }
+
+        /* === Loading Screen === */
+        #loading { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f0f15; color: #ff4500; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; z-index: 999; transition: opacity 0.5s ease; }
+        #loading span { font-size: 16px; color: #888; margin-top: 10px; }
+        
+        /* === Controls & UI === */
+        #controls-info { position: absolute; top: 20px; left: 20px; color: #aaa; font-size: 12px; font-weight: bold; background: rgba(0,0,0,0.5); padding: 12px 15px; border-radius: 8px; user-select: none; pointer-events: none; border-left: 3px solid #ff4500; line-height: 1.8; z-index: 100; display: none; }
+        .highlight { color: #00ffcc; }
+        .key-btn { background: #333; padding: 2px 6px; border-radius: 4px; border: 1px solid #555; color: #fff; }
+
+        #drift-score-container { position: absolute; top: 50px; width: 100%; text-align: center; pointer-events: none; user-select: none; z-index: 100; display: none;}
+        #drift-score { font-size: 42px; color: #ffaa00; font-style: italic; font-weight: 900; text-shadow: 0 0 25px #ffaa00, 0 0 10px #fff; letter-spacing: 2px; }
+
+        #dashboard-container { position: absolute; bottom: 30px; right: 30px; width: 200px; height: 200px; background: radial-gradient(circle, #1a1a24 40%, #0a0a0f 100%); border-radius: 50%; border: 6px solid #333; box-shadow: 0 0 30px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.8); justify-content: center; align-items: center; pointer-events: none; user-select: none; font-family: 'Arial', sans-serif; z-index: 100; display: none;}
+        #tacho-svg { position: absolute; width: 100%; height: 100%; }
+        
+        .rpm-num { position: absolute; font-weight: bold; font-size: 14px; color: #ccc; width: 20px; height: 20px; text-align: center; margin-left: -10px; margin-top: -10px; z-index: 5; }
+        .rpm-0 { top: 154px; left: 46px; }
+        .rpm-1 { top: 115px; left: 26px; }
+        .rpm-2 { top: 71px; left: 30px; }
+        .rpm-3 { top: 37px; left: 58px; }
+        .rpm-4 { top: 25px; left: 100px; }
+        .rpm-5 { top: 37px; left: 141px; }
+        .rpm-6 { top: 71px; left: 169px; }
+        .rpm-7 { top: 115px; left: 173px; color: #ff3300; }
+        .rpm-8 { top: 154px; left: 153px; color: #ff3300; }
+
+        #needle { position: absolute; bottom: 50%; left: calc(50% - 4px); width: 6px; height: 85px; background: linear-gradient(to top, #ff0000, #ff5500); transform-origin: bottom center; transform: rotate(-135deg); border-radius: 4px; box-shadow: 0 0 12px #ff3300; transition: transform 0.05s linear; z-index: 10; }
+        #needle::after { content: ''; position: absolute; bottom: -10px; left: -6px; width: 18px; height: 18px; background: radial-gradient(circle, #444 30%, #111 100%); border: 2px solid #555; border-radius: 50%; box-shadow: 0 5px 10px rgba(0,0,0,0.8); z-index: 11; }
+        
+        #gear-display { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); font-size: 32px; font-weight: 900; color: #fff; font-style: italic; text-shadow: 0 0 15px #fff; font-family: Impact, sans-serif; z-index: 5; }
+        #speed-display { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: 900; color: #00ffcc; text-shadow: 0 0 10px #00ffcc; letter-spacing: 1px; z-index: 5; }
+        #speed-unit { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #aaa; font-weight: bold; letter-spacing: 1px; z-index: 5;}
+
+        /* === Pause Menu & HUD Stats === */
+        #pause-menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            z-index: 2001; display: none; flex-direction: column; justify-content: center; align-items: center; 
+        }
+        
+        #race-stats {
+            position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); padding: 15px 25px;
+            border-radius: 8px; border-right: 4px solid #ffaa00; color: #aaa; font-size: 14px;
+            font-family: 'Segoe UI', monospace; font-weight: bold; text-align: right;
+            user-select: none; pointer-events: none; z-index: 100; display: none;
+        }
+        .stat-row { margin-bottom: 5px; }
+        .stat-val { font-size: 20px; font-style: italic; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); display: inline-block; min-width: 90px;}
+        .score-val { color: #ffaa00; text-shadow: 0 0 10px #ffaa00; font-size: 24px;}
+        
+        /* Fixed Overlap positioning by shifting top and giving matching style to controls-info */
+        .esc-hint { 
+            font-size: 12px; 
+            color: #aaa; 
+            position: absolute; 
+            top: 180px; 
+            left: 20px; 
+            background: rgba(0,0,0,0.5); 
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            border-left: 3px solid #ff4500; 
+            font-weight: bold; 
+            display: none; 
+            z-index: 100; 
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+<body>
+    <!-- START OVERLAY -->
+    <div id="start-overlay">
+        <h1>CLICK TO START</h1>
+        <p style="font-size: 22px; color: #fff;">(Start Engine & Audio System)</p>
+    </div>
+
+    <!-- MAIN MENU -->
+    <div id="main-menu">
+        <div class="menu-title">V8 Muscle Drift</div>
+        <div class="menu-subtitle">Pro Racing Simulator</div>
+        
+        <div class="track-selector-container">
+            <span class="track-selector-label">Location:</span>
+            <select id="main-track-select">
+                <option value="0">Mountain Touge</option>
+                <option value="1">Winding Serpent</option>
+                <option value="2">Long Speedway (JUMPS)</option>
+            </select>
+        </div>
+
+        <button class="menu-btn" id="btn-play">Start Engine</button>
+        <button class="menu-btn" id="btn-garage">Garage</button>
+        <button class="menu-btn" id="btn-settings">Settings</button>
+    </div>
+
+    <!-- GARAGE MENU -->
+    <div id="garage-menu">
+        <div class="menu-subtitle" style="margin-bottom: 5px; text-shadow: 0 0 10px #00ffcc; color: #00ffcc; transform: none; letter-spacing: 2px;">SELECT YOUR RIDE</div>
+        <div id="garage-car-name">V8 MUSCLE</div>
+        <div id="garage-controls">
+            <button class="menu-btn" id="btn-prev">&lt; Prev</button>
+            <button class="menu-btn" id="btn-select" style="background: #00ffcc; color: #111; border-color: #00ffcc;">Select</button>
+            <button class="menu-btn" id="btn-next">Next &gt;</button>
+        </div>
+    </div>
+
+    <!-- SETTINGS MENU -->
+    <div id="settings-menu">
+        <div class="menu-title" style="font-size: 56px; margin-bottom: 20px;">SETTINGS</div>
+        <div class="settings-panel">
+            <div class="settings-group">
+                <h3>AUDIO</h3>
+                <div class="setting-item">
+                    <span>Master Volume</span>
+                    <input type="range" id="set-master-vol" min="0" max="100" value="100">
+                </div>
+                <div class="setting-item">
+                    <span>Music Volume</span>
+                    <input type="range" id="set-music-vol" min="0" max="100" value="80">
+                </div>
+                <div class="setting-item">
+                    <span>SFX Volume</span>
+                    <input type="range" id="set-sfx-vol" min="0" max="100" value="100">
+                </div>
+            </div>
+            <div class="settings-group" style="margin-bottom: 0;">
+                <h3>GAMEPLAY & GRAPHICS</h3>
+                <div class="setting-item">
+                    <span>Speedometer Unit</span>
+                    <select id="set-speed-unit">
+                        <option value="kmh">KM/H</option>
+                        <option value="mph">MPH</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <span>Particle Effects (Smoke & Sparks)</span>
+                    <select id="set-particles">
+                        <option value="on">Enabled</option>
+                        <option value="off">Disabled</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <button class="menu-btn" id="btn-settings-back" style="margin-top: 20px; font-size: 28px; padding: 10px 40px; border-color: #00ffcc;">Save & Back</button>
+    </div>
+
+    <!-- PAUSE MENU -->
+    <div id="pause-menu">
+        <div class="menu-title" style="font-size: 72px; margin-bottom: 40px; color: #ccc; text-shadow: none;">PAUSED</div>
+        <button class="menu-btn" id="btn-resume">Resume</button>
+        <button class="menu-btn" id="btn-quit">Quit to Menu</button>
+    </div>
+
+    <div id="loading">
+        <div>Building Ultra Smooth Track...</div>
+        <span>Optimizing Physics Engine...</span>
+    </div>
+    
+    <!-- HUD ELEMENTS -->
+    <div id="controls-info" class="game-hud-element">
+        <span class="key-btn">↑ ↓ ← →</span> : <span class="highlight">Drive / Steer</span><br>
+        <span class="key-btn">A</span> / <span class="key-btn">Z / B</span> : <span class="highlight">Shift Up / Down</span><br>
+        <span class="key-btn">Shift</span> : <span class="highlight">Handbrake</span><br>
+        <span class="key-btn">Space</span> : <span class="highlight">Footbrake</span><br>
+        <span class="key-btn">Q</span> : <span class="highlight">Day/Night</span> | <span class="key-btn">R</span> : <span class="highlight">Reset</span>
+    </div>
+    
+    <div class="esc-hint game-hud-element">Press <span class="highlight">ESC</span> to Pause</div>
+
+    <div id="race-stats" class="game-hud-element">
+        <div class="stat-row">LAP: <span class="stat-val" id="lap-display">1</span></div>
+        <div class="stat-row">TIME: <span class="stat-val" id="time-display">00:00.00</span></div>
+        <div class="stat-row">BEST TIME: <span class="stat-val" id="best-time-display">--:--.--</span></div>
+        <div class="stat-row" style="margin-top: 10px; color: #ffaa00;">DRIFT SCORE: <span class="stat-val score-val" id="current-score-display">0</span></div>
+        <div class="stat-row" style="color: #00ffcc;">BEST DRIFT: <span class="stat-val score-val" style="color: #00ffcc;" id="best-score-display">0</span></div>
+    </div>
+
+    <div id="drift-score-container" class="game-hud-element">
+        <div id="drift-score"></div>
+    </div>
+
+    <div id="dashboard-container" class="game-hud-element">
+        <svg id="tacho-svg" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="88" fill="none" stroke="#444" stroke-width="5" stroke-dasharray="3 16.5" stroke-dashoffset="0" />
+            <circle cx="100" cy="100" r="75" fill="none" stroke="#222" stroke-width="2" />
+            <path d="M 175 60 A 88 88 0 0 1 162 162" fill="none" stroke="#ff3300" stroke-width="6" />
+        </svg>
+        
+        <div class="rpm-num rpm-0">0</div>
+        <div class="rpm-num rpm-1">1</div>
+        <div class="rpm-num rpm-2">2</div>
+        <div class="rpm-num rpm-3">3</div>
+        <div class="rpm-num rpm-4">4</div>
+        <div class="rpm-num rpm-5">5</div>
+        <div class="rpm-num rpm-6">6</div>
+        <div class="rpm-num rpm-7">7</div>
+        <div class="rpm-num rpm-8">8</div>
+
+        <div id="needle"></div>
+        <div id="gear-display">N</div>
+        <div id="speed-display">0</div>
+        <div id="speed-unit">KM/H</div>
+    </div>
+
+    <script>
+        // === Settings State ===
+        const sysSettings = {
+            masterVol: 1.0,
+            musicVol: 0.8,
+            sfxVol: 1.0,
+            speedUnit: 'kmh',
+            particles: true,
+            track: 0 // Default track
+        };
+
+        // === Global Variables ===
+        let scene, camera, renderer, world; 
+        let vehicle, chassisBody;
+        let carVisuals; 
+        let wheelMeshes = [];
+        let spotlights = [];
+        let ambientLight, moonLight;
+        
+        let isDragging = false, cameraAngleX = 0, cameraPitch = 0.15;
+        const keys = { up: false, down: false, left: false, right: false, shift: false, a: false, z: false, space: false };
+        let prevKeysUp = false; 
+        
+        // Physics Tracking
+        let currentSteer = 0; 
+        let globalWheelMat;
+        let globalGroundMat;
+        let trackBodies = [];
+        let trackMeshes = [];
+        let currentTrackIndex = 0;
+
+        // === Car Configurations ===
+        const carConfigs = [
+            {   // 0: Muscle
+                name: "V8 MUSCLE", mass: 2400, baseEngineForce: 7500, maxSteerVal: 1.20,
+                shape: new CANNON.Vec3(1.0, 0.3, 2.6), offset: new CANNON.Vec3(0, 0.4, 0),
+                wRadius: 0.42, wStiffness: 9, wRest: 0.65,
+                wX: 1.15, wZFront: 1.6, wZBack: -1.6, wY: 0.0,
+                frictFront: 4.0, frictBack: 2.2,
+                exX: 0.6, exZ: -2.85, sparkZ: -2.8, color: 0xaa1100,
+                soundProfile: { type: 'sawtooth', baseFreq: 25, rpmMult: 100, filterBase: 80, filterMult: 1500 },
+                shiftProfile: { kaFreq: 3500, chaFreq: 1800, thumpFreq: 80 }
+            },
+            {   // 1: Pickup
+                name: "OFFROAD PICKUP", mass: 2800, baseEngineForce: 6800, maxSteerVal: 1.15,
+                shape: new CANNON.Vec3(1.1, 0.4, 2.8), offset: new CANNON.Vec3(0, 0.2, 0), 
+                wRadius: 0.50, wStiffness: 15, wRest: 0.7, 
+                wX: 1.2, wZFront: 1.7, wZBack: -1.8, wY: -0.1, 
+                frictFront: 3.8, frictBack: 2.0, 
+                exX: 0.8, exZ: -3.05, sparkZ: -3.0, color: 0x0044aa,
+                soundProfile: { type: 'square', baseFreq: 30, rpmMult: 120, filterBase: 100, filterMult: 1200 },
+                shiftProfile: { kaFreq: 2500, chaFreq: 1200, thumpFreq: 60 }
+            },
+            {   // 2: Drift Van
+                name: "DRIFT VAN", mass: 2600, baseEngineForce: 8500, maxSteerVal: 1.30, 
+                shape: new CANNON.Vec3(1.0, 0.45, 2.4), // Reduced shape half-height for perfect floor clearance
+                offset: new CANNON.Vec3(0, 0.55, 0.3), // Raised origin relative to physical ground limit to prevent clipping
+                wRadius: 0.40, wStiffness: 12, wRest: 0.48, // Restored gorgeous stance (低趴悬挂)
+                wX: 1.15, wZFront: 1.6, wZBack: -1.5, wY: 0.0, 
+                frictFront: 4.2, frictBack: 2.5, 
+                exX: 0.7, exZ: -2.7, sparkZ: -2.6, color: 0xdddddd,
+                soundProfile: { type: 'triangle', baseFreq: 40, rpmMult: 180, filterBase: 150, filterMult: 2500 },
+                shiftProfile: { kaFreq: 4500, chaFreq: 2200, thumpFreq: 100 }
+            }
+        ];
+        let currentCarIndex = 0;
+
+        // Gearbox & RPM System
+        let currentGear = 0; 
+        let displayedRpm = 800;
+        const idleRpm = 800;
+        const redlineRpm = 8000;
+        let manualOverrideTimer = 0;
+
+        let isDay = false;
+        let wallMat, chassisMat;
+        
+        // Particle Systems
+        const particles = [];
+        let smokeGeo, smokeMat;
+
+        const sparks = [];
+        let sparkGeo, sparkMat;
+
+        const skidMarks = [];
+        let skidGeo, skidMat;
+
+        window.flames = [];
+        window.backfireTimer = 0;
+
+        // === Game State ===
+        let isPlaying = false;
+        let isPaused = false;
+        let inGarage = true;
+        let garageAngle = 0;
+        
+        let raceStarted = false;
+        let lapTime = 0;
+        let bestTime = 999999;
+        let lapCount = 1;
+        let currentLapScore = 0;
+        let bestLapScore = 0;
+
+        // === Audio System ===
+        let audioCtx, engineOsc, engineFilter, engineGain, turboOsc, turboGain, driftNoise, driftFilter, driftGain, noiseBuffer;
+        let masterGainNode, sfxGainNode, musicGainNode;
+        let isAudioReady = false;
+        let isMusicPlaying = false;
+        let menuBeatTimer;
+        let menuBeatStep = 0;
+
+        function toggleDayNight() {
+            isDay = !isDay;
+            if (isDay) {
+                scene.background = new THREE.Color(0x87CEEB);
+                scene.fog.color = new THREE.Color(0x87CEEB);
+                scene.fog.density = 0.002;
+                if(ambientLight) {
+                    ambientLight.color.setHex(0xaaccff);
+                    ambientLight.intensity = 1.3;
+                }
+                if(moonLight) {
+                    moonLight.color.setHex(0xffffee);
+                    moonLight.intensity = 1.5;
+                }
+                spotlights.forEach(spot => spot.intensity = 0.5); 
+            } else {
+                scene.background = new THREE.Color(0x1a1a2e);
+                scene.fog.color = new THREE.Color(0x1a1a2e);
+                scene.fog.density = 0.005;
+                if(ambientLight) {
+                    ambientLight.color.setHex(0x222233);
+                    ambientLight.intensity = 1.0;
+                }
+                if(moonLight) {
+                    moonLight.color.setHex(0x6688cc);
+                    moonLight.intensity = 0.8;
+                }
+                spotlights.forEach(spot => spot.intensity = 3.0); 
+            }
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            if (isPaused) {
+                document.getElementById('pause-menu').style.display = 'flex';
+                if(audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+                for (let k in keys) keys[k] = false; 
+            } else {
+                document.getElementById('pause-menu').style.display = 'none';
+                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            }
+        }
+
+        function initAudio() {
+            if (isAudioReady) return;
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            masterGainNode = audioCtx.createGain();
+            masterGainNode.gain.value = sysSettings.masterVol;
+            masterGainNode.connect(audioCtx.destination);
+
+            sfxGainNode = audioCtx.createGain();
+            sfxGainNode.gain.value = sysSettings.sfxVol;
+            sfxGainNode.connect(masterGainNode);
+
+            musicGainNode = audioCtx.createGain();
+            musicGainNode.gain.value = sysSettings.musicVol;
+            musicGainNode.connect(masterGainNode);
+
+            const bufferSize = audioCtx.sampleRate * 2; 
+            noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+            engineOsc = audioCtx.createOscillator();
+            engineOsc.type = carConfigs[currentCarIndex].soundProfile.type;
+            engineOsc.frequency.value = carConfigs[currentCarIndex].soundProfile.baseFreq; 
+            
+            engineFilter = audioCtx.createBiquadFilter();
+            engineFilter.type = 'lowpass';
+            engineFilter.frequency.value = carConfigs[currentCarIndex].soundProfile.filterBase; 
+            
+            engineGain = audioCtx.createGain();
+            engineGain.gain.value = 0.1; 
+            
+            engineOsc.connect(engineFilter).connect(engineGain).connect(sfxGainNode);
+            engineOsc.start();
+
+            turboOsc = audioCtx.createOscillator();
+            turboOsc.type = 'sine'; 
+            turboOsc.frequency.value = 600; 
+            
+            turboGain = audioCtx.createGain();
+            turboGain.gain.value = 0.0; 
+            
+            turboOsc.connect(turboGain).connect(sfxGainNode);
+            turboOsc.start();
+            
+            driftNoise = audioCtx.createBufferSource();
+            driftNoise.buffer = noiseBuffer;
+            driftNoise.loop = true;
+            driftFilter = audioCtx.createBiquadFilter();
+            driftFilter.type = 'bandpass';
+            driftFilter.frequency.value = 2800; 
+            driftFilter.Q.value = 3.0; 
+            driftGain = audioCtx.createGain();
+            driftGain.gain.value = 0;
+            driftNoise.connect(driftFilter).connect(driftGain).connect(sfxGainNode);
+            driftNoise.start();
+
+            isAudioReady = true;
+        }
+
+        function updateAudioSettings() {
+            if(!isAudioReady) return;
+            masterGainNode.gain.value = sysSettings.masterVol;
+            musicGainNode.gain.value = sysSettings.musicVol;
+            sfxGainNode.gain.value = sysSettings.sfxVol;
+        }
+
+        // === Menu Background Music ===
+        function playMenuMusic() {
+            if(!isAudioReady || isMusicPlaying) return;
+            isMusicPlaying = true;
+            
+            function nextBeat() {
+                if(!isMusicPlaying) return;
+                const t = audioCtx.currentTime;
+                
+                if (menuBeatStep % 4 === 0) {
+                    let kick = audioCtx.createOscillator();
+                    kick.frequency.setValueAtTime(150, t);
+                    kick.frequency.exponentialRampToValueAtTime(10, t + 0.3);
+                    let kickGain = audioCtx.createGain();
+                    kickGain.gain.setValueAtTime(0.6, t);
+                    kickGain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    kick.connect(kickGain).connect(musicGainNode);
+                    kick.start(t); kick.stop(t+0.3);
+                }
+
+                let bassFreq = [32.70, 32.70, 36.71, 24.50][Math.floor(menuBeatStep / 4) % 4]; 
+                let bass = audioCtx.createOscillator();
+                bass.type = 'sawtooth';
+                bass.frequency.value = bassFreq;
+                let bassFilter = audioCtx.createBiquadFilter();
+                bassFilter.type = 'lowpass';
+                bassFilter.frequency.setValueAtTime(200, t);
+                bassFilter.frequency.linearRampToValueAtTime(600, t + 0.1);
+                bassFilter.frequency.linearRampToValueAtTime(200, t + 0.2);
+                let bassGain = audioCtx.createGain();
+                bassGain.gain.setValueAtTime(0.15, t);
+                bassGain.gain.linearRampToValueAtTime(0.01, t + 0.2);
+                bass.connect(bassFilter).connect(bassGain).connect(musicGainNode);
+                bass.start(t); bass.stop(t+0.2);
+
+                if (menuBeatStep % 2 === 1) {
+                    let hat = audioCtx.createBufferSource();
+                    hat.buffer = noiseBuffer;
+                    let hatFilter = audioCtx.createBiquadFilter();
+                    hatFilter.type = 'highpass';
+                    hatFilter.frequency.value = 5000;
+                    let hatGain = audioCtx.createGain();
+                    hatGain.gain.setValueAtTime(0.08, t);
+                    hatGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                    hat.connect(hatFilter).connect(hatGain).connect(musicGainNode);
+                    hat.start(t); hat.stop(t+0.05);
+                }
+
+                let arpNotes = [130.81, 155.56, 196.00, 233.08]; 
+                let arpFreq = arpNotes[menuBeatStep % arpNotes.length] * 2; 
+                let arp = audioCtx.createOscillator();
+                arp.type = 'triangle';
+                arp.frequency.value = arpFreq;
+                let arpFilter = audioCtx.createBiquadFilter();
+                arpFilter.type = 'lowpass';
+                arpFilter.frequency.setValueAtTime(1200, t);
+                let arpGain = audioCtx.createGain();
+                arpGain.gain.setValueAtTime(0.06, t);
+                arpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                arp.connect(arpFilter).connect(arpGain).connect(musicGainNode);
+                arp.start(t); arp.stop(t+0.15);
+                
+                menuBeatStep++;
+                menuBeatTimer = setTimeout(nextBeat, 150);
+            }
+            nextBeat();
+        }
+
+        function stopMenuMusic() {
+            isMusicPlaying = false;
+            clearTimeout(menuBeatTimer);
+        }
+
+        function updateAudioDynamic(rpm, isDrifting, driftAngle, speed) {
+            if(!isAudioReady) return;
+            
+            let rpmRatio = rpm / redlineRpm;
+            let conf = carConfigs[currentCarIndex].soundProfile;
+
+            engineOsc.type = conf.type;
+            engineOsc.frequency.setTargetAtTime(conf.baseFreq + rpmRatio * conf.rpmMult, audioCtx.currentTime, 0.05);
+            engineFilter.frequency.setTargetAtTime(conf.filterBase + rpmRatio * conf.filterMult, audioCtx.currentTime, 0.05);
+            
+            turboOsc.frequency.setTargetAtTime(600 + rpmRatio * 2000, audioCtx.currentTime, 0.1);
+            let tGain = keys.up ? Math.min(0.02, rpmRatio * 0.02) : 0; 
+            turboGain.gain.setTargetAtTime(tGain, audioCtx.currentTime, 0.1);
+
+            if(isDrifting && displayedRpm > 1000) {
+                let slipIntensity = Math.min(1.0, (driftAngle - 10) / 45);
+                let vol = (slipIntensity * 0.4) + Math.min(0.2, (speed / 300) * 0.2); 
+                driftGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1);
+
+                let targetFreq = 1600 + (speed * 6) + (slipIntensity * 1200);
+                driftFilter.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1);
+                driftFilter.Q.setTargetAtTime(2.0 + slipIntensity * 4.0, audioCtx.currentTime, 0.1); 
+
+            } else {
+                driftGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.15);
+            }
+        }
+
+        function playShiftSound() {
+            if(!isAudioReady) return;
+            
+            let conf = carConfigs[currentCarIndex].shiftProfile;
+            let now = audioCtx.currentTime;
+
+            engineGain.gain.setValueAtTime(0.01, now);
+            engineGain.gain.linearRampToValueAtTime(0.1, now + 0.2);
+
+            let ka = audioCtx.createBufferSource();
+            ka.buffer = noiseBuffer;
+            let kaFilter = audioCtx.createBiquadFilter();
+            kaFilter.type = 'bandpass';
+            kaFilter.frequency.value = conf.kaFreq; 
+            kaFilter.Q.value = 5;
+            let kaGain = audioCtx.createGain();
+            kaGain.gain.setValueAtTime(0.5, now);
+            kaGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+            ka.connect(kaFilter).connect(kaGain).connect(sfxGainNode);
+            ka.start(now);
+            ka.stop(now + 0.05);
+
+            let chaTime = now + 0.09; 
+
+            let cha = audioCtx.createBufferSource();
+            cha.buffer = noiseBuffer;
+            let chaFilter = audioCtx.createBiquadFilter();
+            chaFilter.type = 'bandpass';
+            chaFilter.frequency.value = conf.chaFreq; 
+            chaFilter.Q.value = 3;
+            let chaGain = audioCtx.createGain();
+            chaGain.gain.setValueAtTime(0.7, chaTime);
+            chaGain.gain.exponentialRampToValueAtTime(0.01, chaTime + 0.08);
+            cha.connect(chaFilter).connect(chaGain).connect(sfxGainNode);
+            cha.start(chaTime);
+            cha.stop(chaTime + 0.08);
+
+            let thump = audioCtx.createOscillator();
+            thump.type = 'sine';
+            thump.frequency.setValueAtTime(conf.thumpFreq, chaTime);
+            thump.frequency.exponentialRampToValueAtTime(30, chaTime + 0.1);
+            let thumpGain = audioCtx.createGain();
+            thumpGain.gain.setValueAtTime(0.8, chaTime);
+            thumpGain.gain.exponentialRampToValueAtTime(0.01, chaTime + 0.1);
+            thump.connect(thumpGain).connect(sfxGainNode);
+            thump.start(chaTime);
+            thump.stop(chaTime + 0.1);
+        }
+
+        function playBackfireSound() {
+            if(!isAudioReady) return;
+            
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.15);
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.connect(gain).connect(sfxGainNode);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1200;
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.9, audioCtx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            noise.connect(filter).connect(noiseGain).connect(sfxGainNode);
+            noise.start();
+            noise.stop(audioCtx.currentTime + 0.2);
+        }
+
+        function playCrashSound(impactVelocity) {
+            if(!isAudioReady) return;
+            let vol = Math.min(1.0, impactVelocity / 25) * 0.6; 
+            if(vol < 0.1) return;
+            const crashSource = audioCtx.createBufferSource();
+            crashSource.buffer = noiseBuffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 300 + Math.random() * 200; 
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            crashSource.connect(filter).connect(gain).connect(sfxGainNode);
+            crashSource.start();
+            crashSource.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // === Menu & UI Logic ===
+        function toggleHUD(show) {
+            const elements = document.querySelectorAll('.game-hud-element');
+            elements.forEach(el => {
+                if(show) {
+                    el.style.display = (el.id === 'dashboard-container') ? 'flex' : 'block';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        }
+
+        function teleportToGarage() {
+            if (chassisBody) {
+                chassisBody.position.set(0, 503, 0); 
+                chassisBody.velocity.set(0,0,0);
+                chassisBody.angularVelocity.set(0,0,0);
+                chassisBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI); 
+            }
+            inGarage = true;
+        }
+
+        function formatTime(seconds) {
+            if (seconds >= 999999) return "--:--.--";
+            let m = Math.floor(seconds / 60);
+            let s = Math.floor(seconds % 60);
+            let ms = Math.floor((seconds % 1) * 100);
+            return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s + "." + (ms < 10 ? "0" : "") + ms;
+        }
+
+        function updateRaceStatsUI() {
+            document.getElementById('lap-display').innerText = lapCount;
+            document.getElementById('time-display').innerText = formatTime(lapTime);
+            document.getElementById('best-time-display').innerText = formatTime(bestTime);
+            document.getElementById('current-score-display').innerText = currentLapScore;
+            document.getElementById('best-score-display').innerText = bestLapScore;
+        }
+
+        function resetGameSession() {
+            raceStarted = false;
+            lapTime = 0;
+            lapCount = 1;
+            currentLapScore = 0;
+            bestLapScore = 0;
+            bestTime = 999999;
+            checkPointPassed = false;
+            window.nextCheckpointIndex = 0;
+            window.prevDot = undefined;
+            updateRaceStatsUI();
+            
+            if (chassisBody) {
+                chassisBody.position.copy(window.spawnPosition); 
+                chassisBody.velocity.set(0,0,0); 
+                chassisBody.angularVelocity.set(0,0,0); 
+                chassisBody.quaternion.copy(window.spawnQuaternion); 
+            }
+            currentGear = 0; displayedRpm = idleRpm; manualOverrideTimer = 0; window.backfireTimer = 0;
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        window.onload = function() {
+            
+            document.getElementById('start-overlay').addEventListener('click', function() {
+                this.style.display = 'none';
+                initAudio();
+                playMenuMusic();
+            });
+
+            document.getElementById('btn-play').addEventListener('click', function() {
+                document.getElementById('main-menu').style.opacity = '0';
+                setTimeout(() => { document.getElementById('main-menu').style.display = 'none'; }, 500);
+                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                stopMenuMusic();
+                
+                // Track update
+                sysSettings.track = parseInt(document.getElementById('main-track-select').value);
+                if (currentTrackIndex !== sysSettings.track) {
+                    currentTrackIndex = sysSettings.track;
+                    createTrack(currentTrackIndex, globalGroundMat);
+                }
+
+                inGarage = false;
+                resetGameSession();
+                toggleHUD(true);
+                
+                isPlaying = true;
+                isPaused = false;
+            });
+
+            document.getElementById('btn-garage').addEventListener('click', function() {
+                document.getElementById('main-menu').style.display = 'none';
+                document.getElementById('garage-menu').style.display = 'flex';
+                document.getElementById('garage-car-name').innerText = carConfigs[currentCarIndex].name;
+            });
+
+            // === Settings Menu Events ===
+            document.getElementById('btn-settings').addEventListener('click', function() {
+                document.getElementById('main-menu').style.display = 'none';
+                document.getElementById('settings-menu').style.display = 'flex';
+            });
+
+            document.getElementById('btn-settings-back').addEventListener('click', function() {
+                document.getElementById('settings-menu').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'flex';
+                
+                if (currentTrackIndex !== sysSettings.track) {
+                    currentTrackIndex = sysSettings.track;
+                    createTrack(currentTrackIndex, globalGroundMat);
+                    if (!inGarage && chassisBody) {
+                        chassisBody.position.copy(window.spawnPosition); 
+                        chassisBody.velocity.set(0,0,0); 
+                        chassisBody.angularVelocity.set(0,0,0); 
+                        chassisBody.quaternion.copy(window.spawnQuaternion); 
+                        resetGameSession();
+                    }
+                }
+            });
+
+            document.getElementById('set-master-vol').addEventListener('input', (e) => { sysSettings.masterVol = e.target.value / 100; updateAudioSettings(); });
+            document.getElementById('set-music-vol').addEventListener('input', (e) => { sysSettings.musicVol = e.target.value / 100; updateAudioSettings(); });
+            document.getElementById('set-sfx-vol').addEventListener('input', (e) => { sysSettings.sfxVol = e.target.value / 100; updateAudioSettings(); });
+            document.getElementById('set-speed-unit').addEventListener('change', (e) => { sysSettings.speedUnit = e.target.value; });
+            document.getElementById('set-particles').addEventListener('change', (e) => { sysSettings.particles = (e.target.value === 'on'); });
+
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                let newIndex = currentCarIndex - 1;
+                if(newIndex < 0) newIndex = carConfigs.length - 1;
+                loadCar(newIndex);
+                document.getElementById('garage-car-name').innerText = carConfigs[currentCarIndex].name;
+            });
+
+            document.getElementById('btn-next').addEventListener('click', () => {
+                let newIndex = (currentCarIndex + 1) % carConfigs.length;
+                loadCar(newIndex);
+                document.getElementById('garage-car-name').innerText = carConfigs[currentCarIndex].name;
+            });
+
+            document.getElementById('btn-select').addEventListener('click', () => {
+                document.getElementById('garage-menu').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'flex';
+            });
+
+            document.getElementById('btn-resume').addEventListener('click', togglePause);
+
+            document.getElementById('btn-quit').addEventListener('click', function() {
+                isPaused = false;
+                isPlaying = false;
+                document.getElementById('pause-menu').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'flex';
+                document.getElementById('main-menu').style.opacity = '1';
+                
+                toggleHUD(false);
+                teleportToGarage();
+                
+                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                playMenuMusic(); 
+
+                for (let k in keys) keys[k] = false;
+            });
+
+            init();
+            animate();
+        };
+
+        function init() {
+            carVisuals = new THREE.Group();
+
+            smokeGeo = new THREE.IcosahedronGeometry(0.9, 0);
+            smokeMat = new THREE.MeshBasicMaterial({ color: 0xddddcc, transparent: true, opacity: 0.3, depthWrite: false });
+
+            sparkGeo = new THREE.BoxGeometry(0.06, 0.06, 0.5); 
+            sparkMat = new THREE.MeshBasicMaterial({ color: 0xffea00, transparent: true, opacity: 1.0, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false });
+
+            skidGeo = new THREE.PlaneGeometry(0.4, 1.2);
+            skidMat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e); 
+            scene.fog = new THREE.FogExp2(0x1a1a2e, 0.005); 
+            
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1500);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            ambientLight = new THREE.AmbientLight(0x222233, 1.0);
+            scene.add(ambientLight);
+            
+            moonLight = new THREE.DirectionalLight(0x6688cc, 0.8);
+            moonLight.position.set(200, 300, -200);
+            moonLight.castShadow = true;
+            moonLight.shadow.camera.left = -200; moonLight.shadow.camera.right = 200;
+            moonLight.shadow.camera.top = 200; moonLight.shadow.camera.bottom = -200;
+            moonLight.shadow.mapSize.width = 2048; moonLight.shadow.mapSize.height = 2048;
+            scene.add(moonLight);
+
+            world = new CANNON.World();
+            world.gravity.set(0, -9.82, 0);
+            world.broadphase = new CANNON.SAPBroadphase(world);
+            world.solver.iterations = 50; 
+
+            globalGroundMat = new CANNON.Material("groundMat");
+            globalWheelMat = new CANNON.Material("wheelMat");
+            wallMat = new CANNON.Material("wallMat");
+            chassisMat = new CANNON.Material("chassisMat");
+
+            world.addContactMaterial(new CANNON.ContactMaterial(globalGroundMat, globalWheelMat, { friction: 0.4, restitution: 0 }));
+            world.addContactMaterial(new CANNON.ContactMaterial(wallMat, globalWheelMat, { friction: 0.0, restitution: 0.0 }));
+            world.addContactMaterial(new CANNON.ContactMaterial(wallMat, chassisMat, { friction: 0.0, restitution: 0.0 }));
+
+            createTrack(currentTrackIndex, globalGroundMat);
+            
+            // === Create Garage Environment ===
+            const garageBody = new CANNON.Body({ mass: 0, material: globalGroundMat });
+            garageBody.addShape(new CANNON.Box(new CANNON.Vec3(20, 1, 20)));
+            garageBody.position.set(0, 500, 0);
+            world.addBody(garageBody);
+
+            const garagePlatform = new THREE.Mesh(
+                new THREE.CylinderGeometry(10, 10, 0.5, 64),
+                new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3, metalness: 0.8 })
+            );
+            garagePlatform.position.set(0, 500.75, 0); 
+            scene.add(garagePlatform);
+
+            const neonRing = new THREE.Mesh(
+                new THREE.TorusGeometry(10, 0.1, 16, 64),
+                new THREE.MeshBasicMaterial({ color: 0x00ffcc })
+            );
+            neonRing.position.set(0, 501.05, 0);
+            neonRing.rotation.x = Math.PI / 2;
+            scene.add(neonRing);
+
+            const gLight1 = new THREE.SpotLight(0xffffff, 2, 50, Math.PI/4, 0.5, 1);
+            gLight1.position.set(8, 510, 8); gLight1.target.position.set(0, 501, 0);
+            scene.add(gLight1); scene.add(gLight1.target);
+
+            const gLight2 = new THREE.SpotLight(0xffffff, 2, 50, Math.PI/4, 0.5, 1);
+            gLight2.position.set(-8, 510, -8); gLight2.target.position.set(0, 501, 0);
+            scene.add(gLight2); scene.add(gLight2.target);
+
+            const gLight3 = new THREE.SpotLight(0xff4500, 2, 50, Math.PI/2, 1, 1); 
+            gLight3.position.set(0, 502, -10); gLight3.target.position.set(0, 501, 0);
+            scene.add(gLight3); scene.add(gLight3.target);
+
+            createCar(globalWheelMat);
+            teleportToGarage(); 
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }, false);
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Escape' && isPlaying) {
+                    togglePause();
+                } else {
+                    handleKey(e.code, true);
+                }
+            });
+            document.addEventListener('keyup', (e) => handleKey(e.code, false));
+            
+            document.addEventListener('mousedown', () => isDragging = true);
+            document.addEventListener('mouseup', () => isDragging = false);
+            document.addEventListener('mousemove', (e) => {
+                if(isDragging) {
+                    if(inGarage) {
+                        garageAngle -= e.movementX * 0.005;
+                        cameraPitch -= e.movementY * 0.005;
+                        cameraPitch = Math.max(-0.1, Math.min(1.0, cameraPitch)); 
+                    } else if (isPlaying && !isPaused) {
+                        cameraAngleX -= e.movementX * 0.005;
+                        cameraPitch -= e.movementY * 0.005;
+                        cameraPitch = Math.max(-0.1, Math.min(1.0, cameraPitch)); 
+                    }
+                }
+            });
+
+            setTimeout(() => { document.getElementById('loading').style.opacity = '0'; }, 1000);
+            setTimeout(() => { document.getElementById('loading').style.display = 'none'; }, 1500);
+        }
+
+        function createTrack(index, groundMat) {
+            trackBodies.forEach(b => world.removeBody(b));
+            trackMeshes.forEach(m => {
+                scene.remove(m);
+                if (m.geometry) m.geometry.dispose();
+                if (m.material) m.material.dispose();
+            });
+            trackBodies = [];
+            trackMeshes = [];
+
+            const numSegments = (index === 2) ? 350 : (index === 1 ? 350 : 300); 
+            const trackWidth = (index === 2) ? 35 : (index === 1 ? 16 : 24);   
+            const wallHeight = 1.5;  
+            const wallWidth = 2;
+
+            let trackColor = 0x333333;
+            if (index === 1) trackColor = 0x2a2a32;
+            if (index === 2) trackColor = 0x443322; 
+
+            const trackMat = new THREE.MeshStandardMaterial({ color: trackColor, roughness: 0.9, metalness: 0.1 });
+            const curbMat = new THREE.MeshStandardMaterial({ color: 0xaa1111, roughness: 0.8 });
+            const curbMat2 = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.8 });
+            const wallMatMesh = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 1.0 });
+
+            let spawnPointSet = false;
+            window.checkpoints = [];
+
+            // Multi-checkpoints setup
+            let cpIndices = [
+                Math.floor(numSegments * 0.25),
+                Math.floor(numSegments * 0.50),
+                Math.floor(numSegments * 0.75)
+            ];
+
+            for(let i = 0; i < numSegments; i++) {
+                let t1 = (i / numSegments) * Math.PI * 2;
+                let t2 = ((i + 1) / numSegments) * Math.PI * 2;
+
+                let getPt = (t) => {
+                    let x, y, z;
+                    if (index === 0) { // Mountain Touge
+                        let r = 350 + 80 * Math.sin(t * 3) + 40 * Math.cos(t * 5); 
+                        x = Math.cos(t) * r;
+                        y = 6 * Math.sin(t * 2) + 2 * Math.cos(t * 4); 
+                        z = Math.sin(t) * r;
+                    } else if (index === 1) { // Winding Serpent
+                        let r = 220 + 40 * Math.sin(t * 6) + 20 * Math.cos(t * 3); 
+                        x = Math.cos(t) * r;
+                        y = 3 * Math.sin(t * 2); 
+                        z = Math.sin(t) * r;
+                    } else if (index === 2) { // Long Speedway
+                        x = 80 * Math.cos(t);
+                        y = 0;
+                        z = 400 * Math.sin(t);
+                    }
+                    return new THREE.Vector3(x, y, z);
+                };
+
+                let p1 = getPt(t1);
+                let p2 = getPt(t2);
+                let center = p1.clone().add(p2).multiplyScalar(0.5);
+                let dir = p2.clone().sub(p1);
+                let len = dir.length();
+                dir.normalize();
+
+                let m = new THREE.Matrix4().lookAt(p1, p2, new THREE.Vector3(0,1,0));
+                let q = new THREE.Quaternion().setFromRotationMatrix(m);
+
+                const roadShape = new CANNON.Box(new CANNON.Vec3(trackWidth/2, 0.2, len * 1.5)); 
+                const roadBody = new CANNON.Body({ mass: 0, material: groundMat });
+                roadBody.addShape(roadShape);
+                roadBody.position.copy(center);
+                roadBody.position.y -= 0.2; 
+                roadBody.quaternion.copy(q);
+                world.addBody(roadBody);
+                trackBodies.push(roadBody);
+
+                const roadMesh = new THREE.Mesh(new THREE.BoxGeometry(trackWidth, 0.4, len * 1.5), trackMat);
+                roadMesh.position.copy(center);
+                roadMesh.position.y -= 0.2; 
+                roadMesh.quaternion.copy(q);
+                roadMesh.receiveShadow = true;
+                scene.add(roadMesh);
+                trackMeshes.push(roadMesh);
+
+                const buildWall = (offsetX, mat) => {
+                    const wallShape = new CANNON.Box(new CANNON.Vec3(wallWidth/2, wallHeight/2, len * 1.5));
+                    const wallBody = new CANNON.Body({ mass: 0, material: wallMat }); 
+                    wallBody.addShape(wallShape);
+                    
+                    const offsetVec = new THREE.Vector3(offsetX, wallHeight/2 - 0.2, 0); 
+                    offsetVec.applyQuaternion(q);
+                    
+                    const finalPos = center.clone().add(offsetVec);
+                    wallBody.position.set(finalPos.x, finalPos.y, finalPos.z);
+                    wallBody.quaternion.set(q.x, q.y, q.z, q.w);
+                    world.addBody(wallBody);
+                    trackBodies.push(wallBody);
+
+                    const wallMesh = new THREE.Mesh(new THREE.BoxGeometry(wallWidth, wallHeight, len * 1.5), mat);
+                    wallMesh.position.copy(wallBody.position);
+                    wallMesh.quaternion.copy(wallBody.quaternion);
+                    wallMesh.castShadow = true; wallMesh.receiveShadow = true;
+                    scene.add(wallMesh);
+                    trackMeshes.push(wallMesh);
+                };
+
+                let wMat = (i % 8 < 4) ? curbMat : curbMat2;
+                if (index === 0) wMat = (i % 8 < 4) ? curbMat : wallMatMesh;
+                
+                buildWall(trackWidth/2 + wallWidth/2, wMat);  
+                buildWall(-trackWidth/2 - wallWidth/2, wMat); 
+
+                // === Start / Finish line ===
+                if (!spawnPointSet) {
+                    let qSpawn;
+                    if (index === 2) {
+                        let qFlip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+                        qSpawn = q.clone().multiply(qFlip);
+                    } else {
+                        qSpawn = q.clone();
+                    }
+                    
+                    window.spawnQuaternion = new CANNON.Quaternion(qSpawn.x, qSpawn.y, qSpawn.z, qSpawn.w);
+                    
+                    let actualForward = new THREE.Vector3(0, 0, 1).applyQuaternion(qSpawn).normalize();
+                    window.spawnForward = actualForward.clone();
+                    
+                    window.startLine = {
+                        pos: center.clone(),
+                        normal: actualForward.clone()
+                    };
+                    
+                    window.spawnPosition = center.clone().sub(actualForward.clone().multiplyScalar(18));
+                    window.spawnPosition.y += 2;
+                    
+                    const sfGroup = new THREE.Group();
+                    
+                    for(let j = -trackWidth/2; j <= trackWidth/2; j += 2) {
+                        let clr = (Math.abs(j) % 4 === 0) ? 0xffffff : 0x111111;
+                        let cm = new THREE.Mesh(new THREE.BoxGeometry(2, 0.45, 2), new THREE.MeshBasicMaterial({color: clr}));
+                        cm.position.set(j, 0, 0);
+                        sfGroup.add(cm);
+                    }
+                    
+                    const pGeo = new THREE.CylinderGeometry(0.5, 0.5, 12);
+                    const pMat = new THREE.MeshStandardMaterial({ color: 0xff3300, roughness: 0.5 });
+                    const p1 = new THREE.Mesh(pGeo, pMat); p1.position.set(trackWidth/2 + 2, 6, 0);
+                    const p2 = new THREE.Mesh(pGeo, pMat); p2.position.set(-trackWidth/2 - 2, 6, 0);
+                    
+                    const bGeo = new THREE.BoxGeometry(trackWidth + 5, 2, 0.5);
+                    const bMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+                    const banner = new THREE.Mesh(bGeo, bMat); banner.position.set(0, 11, 0);
+                    
+                    const bText = new THREE.Mesh(new THREE.BoxGeometry(trackWidth + 4.8, 1.5, 0.55), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+                    bText.position.set(0, 11, 0);
+                    
+                    sfGroup.add(p1); sfGroup.add(p2); sfGroup.add(banner); sfGroup.add(bText);
+                    
+                    sfGroup.position.copy(center);
+                    sfGroup.position.y -= 0.15; 
+                    sfGroup.quaternion.copy(q);
+                    
+                    scene.add(sfGroup);
+                    trackMeshes.push(sfGroup);
+
+                    spawnPointSet = true;
+                }
+
+                if (cpIndices.includes(i)) {
+                    window.checkpoints.push({
+                        pos: center.clone(),
+                        radius: trackWidth * 3 
+                    });
+                }
+            }
+
+            if (index === 0 || index === 1) {
+                window.checkpoints.reverse();
+            }
+
+            // Speedway Jumps (Ramps)
+            if (index === 2) {
+                const createVariedRamp = (xCenter, xOffset, z, rWidth, rDepth, rHeight, pitchDeg, rotY) => {
+                    const rampShape = new CANNON.Box(new CANNON.Vec3(rWidth/2, rHeight/2, rDepth/2));
+                    const rampBody = new CANNON.Body({ mass: 0, material: groundMat });
+                    rampBody.addShape(rampShape);
+                    
+                    rampBody.position.set(xCenter + xOffset, -rHeight/2 + 0.1, z);
+                    
+                    let qPitch = new CANNON.Quaternion();
+                    qPitch.setFromAxisAngle(new CANNON.Vec3(1,0,0), -Math.PI * (pitchDeg/180)); 
+                    let qYaw = new CANNON.Quaternion();
+                    qYaw.setFromAxisAngle(new CANNON.Vec3(0,1,0), rotY);
+                    rampBody.quaternion = qYaw.mult(qPitch);
+                    
+                    world.addBody(rampBody);
+                    trackBodies.push(rampBody);
+
+                    const rMat = new THREE.MeshStandardMaterial({ color: 0xff4400, roughness: 0.6, metalness: 0.3 });
+                    const rampMesh = new THREE.Mesh(new THREE.BoxGeometry(rWidth, rHeight, rDepth), rMat);
+                    rampMesh.position.copy(rampBody.position);
+                    rampMesh.quaternion.copy(rampBody.quaternion);
+                    rampMesh.castShadow = true; rampMesh.receiveShadow = true;
+                    scene.add(rampMesh);
+                    trackMeshes.push(rampMesh);
+                };
+
+                createVariedRamp(80, 0, 40, 8, 10, 1.5, 12, 0); 
+                createVariedRamp(80, 12, 100, 6, 10, 2.0, 15, 0); 
+                createVariedRamp(80, -12, 160, 6, 10, 2.0, 15, 0);
+                createVariedRamp(80, 0, 220, 12, 12, 2.5, 12, 0);
+                createVariedRamp(80, 8, 300, 10, 12, 1.8, 10, 0);
+                createVariedRamp(80, -8, 360, 15, 14, 3.0, 14, 0);
+
+                createVariedRamp(-80, 0, 360, 8, 10, 1.5, 12, Math.PI); 
+                createVariedRamp(-80, -12, 300, 6, 10, 2.0, 15, Math.PI); 
+                createVariedRamp(-80, 12, 240, 6, 10, 2.0, 15, Math.PI);
+                createVariedRamp(-80, 0, 180, 12, 12, 2.5, 12, Math.PI);
+                createVariedRamp(-80, -8, 100, 10, 12, 1.8, 10, Math.PI);
+                createVariedRamp(-80, 8, 40, 15, 14, 3.0, 14, Math.PI); 
+            }
+
+            const baseShape = new CANNON.Plane();
+            const baseBody = new CANNON.Body({ mass: 0, material: groundMat });
+            baseBody.addShape(baseShape);
+            baseBody.position.set(0, -20, 0);
+            baseBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+            world.addBody(baseBody);
+            trackBodies.push(baseBody);
+        }
+
+        function loadCar(index) {
+            if(vehicle) {
+                vehicle.removeFromWorld(world);
+                world.removeBody(chassisBody);
+                scene.remove(carVisuals);
+                wheelMeshes.forEach(w => scene.remove(w));
+                wheelMeshes = [];
+                window.flames = [];
+                spotlights.forEach(spot => {
+                    scene.remove(spot);
+                    scene.remove(spot.target);
+                });
+                spotlights = [];
+            }
+            currentCarIndex = index;
+            createCar(globalWheelMat);
+            if(inGarage) teleportToGarage();
+        }
+
+        function createCar(wheelMat) {
+            let config = carConfigs[currentCarIndex];
+
+            chassisBody = new CANNON.Body({ mass: config.mass, material: chassisMat });
+            chassisBody.addShape(new CANNON.Box(config.shape), config.offset); 
+            
+            chassisBody.position.copy(window.spawnPosition);
+            chassisBody.quaternion.copy(window.spawnQuaternion);
+
+            chassisBody.addEventListener("collide", function(e) {
+                if(!isPlaying || isPaused) return;
+                const relativeVelocity = e.contact.getImpactVelocityAlongNormal();
+                if(Math.abs(relativeVelocity) > 5) {
+                    playCrashSound(Math.abs(relativeVelocity));
+                }
+            });
+
+            chassisBody.angularDamping = 0.92; 
+            chassisBody.linearDamping = 0.02;
+
+            vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 });
+
+            const wheelOptions = {
+                radius: config.wRadius, 
+                directionLocal: new CANNON.Vec3(0, -1, 0),
+                suspensionStiffness: config.wStiffness,    
+                suspensionRestLength: config.wRest, 
+                frictionSlip: 2.8, 
+                dampingRelaxation: 1.0,     
+                dampingCompression: 1.5,    
+                maxSuspensionForce: 100000, 
+                rollInfluence: 0.05,        
+                axleLocal: new CANNON.Vec3(-1, 0, 0), 
+                chassisConnectionPointLocal: new CANNON.Vec3(1.15, -0.1, 0),
+                maxSuspensionTravel: 0.8,   // Restored fully to 0.8 to prevent suspension sinking
+                customSlidingRotationalSpeed: -30, 
+                useCustomSlidingRotationalSpeed: true
+            };
+
+            wheelOptions.chassisConnectionPointLocal.set(config.wX, config.wY, config.wZFront); vehicle.addWheel(wheelOptions);
+            wheelOptions.chassisConnectionPointLocal.set(-config.wX, config.wY, config.wZFront); vehicle.addWheel(wheelOptions);
+            wheelOptions.chassisConnectionPointLocal.set(config.wX, config.wY, config.wZBack); vehicle.addWheel(wheelOptions);
+            wheelOptions.chassisConnectionPointLocal.set(-config.wX, config.wY, config.wZBack); vehicle.addWheel(wheelOptions);
+
+            vehicle.wheelInfos[0].frictionSlip = config.frictFront; 
+            vehicle.wheelInfos[1].frictionSlip = config.frictFront; 
+            vehicle.wheelInfos[2].frictionSlip = config.frictBack; 
+            vehicle.wheelInfos[3].frictionSlip = config.frictBack; 
+
+            vehicle.addToWorld(world);
+
+            carVisuals = new THREE.Group();
+            const paintMat = new THREE.MeshStandardMaterial({ color: config.color, metalness: 0.7, roughness: 0.2 }); 
+            const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+            const chromeMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0.9, roughness: 0.1 });
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x050505, metalness: 0.9, roughness: 0.1, transparent: true, opacity: 0.85 });
+            
+            // Dynamic Light Materials
+            const brakeMatL = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x770000 });
+            const brakeMatR = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x770000 });
+            const revMatL = new THREE.MeshStandardMaterial({ color: 0xdddddd, emissive: 0x000000 });
+            const revMatR = new THREE.MeshStandardMaterial({ color: 0xdddddd, emissive: 0x000000 });
+            window.carLightMats = { brake: [brakeMatL, brakeMatR], reverse: [revMatL, revMatR] };
+
+            const hlMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); 
+
+            const visualOffsetY = -0.5;
+
+            // === Car Visuals ===
+            if (currentCarIndex === 0) {
+                // MUSCLE CAR
+                const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.5, 5.4), paintMat);
+                baseMesh.position.set(0, 0.6 + visualOffsetY, 0); baseMesh.castShadow = true; carVisuals.add(baseMesh);
+                
+                const cabinMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 2.2), glassMat);
+                cabinMesh.position.set(0, 1.05 + visualOffsetY, -0.5); cabinMesh.castShadow = true; carVisuals.add(cabinMesh);
+                
+                const fGeo = new THREE.BoxGeometry(0.45, 0.5, 1.2);
+                const f_fl = new THREE.Mesh(fGeo, paintMat); f_fl.position.set(1.0, 0.55+visualOffsetY, 1.6); carVisuals.add(f_fl);
+                const f_fr = new THREE.Mesh(fGeo, paintMat); f_fr.position.set(-1.0, 0.55+visualOffsetY, 1.6); carVisuals.add(f_fr);
+                const f_rl = new THREE.Mesh(fGeo, paintMat); f_rl.position.set(1.0, 0.55+visualOffsetY, -1.6); carVisuals.add(f_rl);
+                const f_rr = new THREE.Mesh(fGeo, paintMat); f_rr.position.set(-1.0, 0.55+visualOffsetY, -1.6); carVisuals.add(f_rr);
+
+                const skirt = new THREE.BoxGeometry(0.15, 0.2, 2.0);
+                const s_l = new THREE.Mesh(skirt, blackMat); s_l.position.set(1.0, 0.45+visualOffsetY, 0); carVisuals.add(s_l);
+                const s_r = new THREE.Mesh(skirt, blackMat); s_r.position.set(-1.0, 0.45+visualOffsetY, 0); carVisuals.add(s_r);
+
+                const splitter = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.05, 0.4), blackMat);
+                splitter.position.set(0, 0.35 + visualOffsetY, 2.7); carVisuals.add(splitter);
+                const grilleMesh = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.3, 0.1), blackMat);
+                grilleMesh.position.set(0, 0.6 + visualOffsetY, 2.71); carVisuals.add(grilleMesh);
+
+                const ducktail = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.15, 0.3), blackMat);
+                ducktail.position.set(0, 0.9 + visualOffsetY, -2.6); ducktail.rotation.x = Math.PI / 8; carVisuals.add(ducktail);
+                
+                const blowerMesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.3, 0.8), chromeMat);
+                blowerMesh.position.set(0, 0.95 + visualOffsetY, 1.4); blowerMesh.castShadow = true; carVisuals.add(blowerMesh);
+
+                const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.15), hlMat);
+                hlLeft.position.set(0.75, 0.6 + visualOffsetY, 2.72); carVisuals.add(hlLeft);
+                const hlRight = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.15), hlMat);
+                hlRight.position.set(-0.75, 0.6 + visualOffsetY, 2.72); carVisuals.add(hlRight);
+                
+                // Active Lights
+                const tlBL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.1), brakeMatL); tlBL.position.set(0.65, 0.6 + visualOffsetY, -2.71); carVisuals.add(tlBL);
+                const tlBR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.1), brakeMatR); tlBR.position.set(-0.65, 0.6 + visualOffsetY, -2.71); carVisuals.add(tlBR);
+                const tlRL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.15, 0.1), revMatL); tlRL.position.set(0.25, 0.6 + visualOffsetY, -2.71); carVisuals.add(tlRL);
+                const tlRR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.15, 0.1), revMatR); tlRR.position.set(-0.25, 0.6 + visualOffsetY, -2.71); carVisuals.add(tlRR);
+            } 
+            else if (currentCarIndex === 1) {
+                // PICKUP TRUCK
+                const pBase = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.5, 5.8), paintMat);
+                pBase.position.set(0, 0.7 + visualOffsetY, 0); pBase.castShadow = true; carVisuals.add(pBase);
+                
+                const pCab = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.7, 2.0), glassMat);
+                pCab.position.set(0, 1.3 + visualOffsetY, 0.5); pCab.castShadow = true; carVisuals.add(pCab);
+                
+                // Add Yellow Light Bar
+                const lightBarGeo = new THREE.BoxGeometry(1.6, 0.15, 0.25);
+                const lightBarMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xffaa00, emissiveIntensity: 2 });
+                const lightBar = new THREE.Mesh(lightBarGeo, lightBarMat);
+                lightBar.position.set(0, 1.7 + visualOffsetY, 0.5); 
+                carVisuals.add(lightBar);
+
+                const pBedL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 2.0), paintMat);
+                pBedL.position.set(0.9, 1.15 + visualOffsetY, -1.9); carVisuals.add(pBedL);
+                const pBedR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 2.0), paintMat);
+                pBedR.position.set(-0.9, 1.15 + visualOffsetY, -1.9); carVisuals.add(pBedR);
+
+                const pRollBar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.9), chromeMat);
+                pRollBar.rotation.z = Math.PI/2; pRollBar.position.set(0, 1.7 + visualOffsetY, -0.6); carVisuals.add(pRollBar);
+
+                const pBumper = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.3, 0.3), blackMat);
+                pBumper.position.set(0, 0.6 + visualOffsetY, 2.9); carVisuals.add(pBumper);
+                
+                const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.15), hlMat);
+                hlLeft.position.set(0.8, 0.8 + visualOffsetY, 2.85); carVisuals.add(hlLeft);
+                const hlRight = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.15), hlMat);
+                hlRight.position.set(-0.8, 0.8 + visualOffsetY, 2.85); carVisuals.add(hlRight);
+                
+                // Active Lights
+                const tlBL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.1), brakeMatL); tlBL.position.set(0.9, 0.95 + visualOffsetY, -2.91); carVisuals.add(tlBL);
+                const tlBR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.1), brakeMatR); tlBR.position.set(-0.9, 0.95 + visualOffsetY, -2.91); carVisuals.add(tlBR);
+                const tlRL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.1), revMatL); tlRL.position.set(0.9, 0.75 + visualOffsetY, -2.91); carVisuals.add(tlRL);
+                const tlRR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.1), revMatR); tlRR.position.set(-0.9, 0.75 + visualOffsetY, -2.91); carVisuals.add(tlRR);
+            }
+            else if (currentCarIndex === 2) {
+                // VAN - Widebody
+                const vBase = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.4, 5.0), paintMat);
+                vBase.position.set(0, 1.1 + visualOffsetY, -0.1); vBase.castShadow = true; carVisuals.add(vBase);
+
+                const vNose = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.6, 0.8), paintMat);
+                vNose.position.set(0, 0.7 + visualOffsetY, 2.8); vNose.castShadow = true; carVisuals.add(vNose);
+
+                const vWin = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.62, 4.0), glassMat);
+                vWin.position.set(0, 1.52 + visualOffsetY, -0.2); carVisuals.add(vWin);
+
+                const vShield = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 0.1), glassMat);
+                vShield.position.set(0, 1.5 + visualOffsetY, 2.45); vShield.rotation.x = -Math.PI/6; carVisuals.add(vShield);
+
+                const vSpoiler = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 0.6), blackMat);
+                vSpoiler.position.set(0, 2.1 + visualOffsetY, -2.5); vSpoiler.rotation.x = Math.PI/8; carVisuals.add(vSpoiler);
+                
+                const wbGeo = new THREE.BoxGeometry(2.4, 0.6, 1.4);
+                const wb_front = new THREE.Mesh(wbGeo, paintMat); wb_front.position.set(0, 0.6 + visualOffsetY, 1.6); carVisuals.add(wb_front);
+                const wb_rear = new THREE.Mesh(wbGeo, paintMat); wb_rear.position.set(0, 0.6 + visualOffsetY, -1.5); carVisuals.add(wb_rear);
+                
+                const vSkirt = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.3, 2.0), blackMat);
+                vSkirt.position.set(0, 0.4 + visualOffsetY, 0); carVisuals.add(vSkirt);
+
+                const vSplitter = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 1.0), blackMat);
+                vSplitter.position.set(0, 0.3 + visualOffsetY, 2.8); carVisuals.add(vSplitter);
+
+                // Add Side Marker Lights
+                const markerGeo = new THREE.BoxGeometry(0.05, 0.1, 0.2);
+                const markerMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00, emissiveIntensity: 1.5 });
+                [-1.8, 0, 1.8].forEach(zOff => {
+                    let m1 = new THREE.Mesh(markerGeo, markerMat); m1.position.set(1.05, 0.6 + visualOffsetY, zOff); carVisuals.add(m1);
+                    let m2 = new THREE.Mesh(markerGeo, markerMat); m2.position.set(-1.05, 0.6 + visualOffsetY, zOff); carVisuals.add(m2);
+                });
+
+                const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.15), hlMat);
+                hlLeft.position.set(0.8, 0.8 + visualOffsetY, 3.2); carVisuals.add(hlLeft);
+                const hlRight = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.15), hlMat);
+                hlRight.position.set(-0.8, 0.8 + visualOffsetY, 3.2); carVisuals.add(hlRight);
+                
+                // Active Lights
+                const tlBL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.1), brakeMatL); tlBL.position.set(0.85, 0.75 + visualOffsetY, -2.61); carVisuals.add(tlBL);
+                const tlBR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.1), brakeMatR); tlBR.position.set(-0.85, 0.75 + visualOffsetY, -2.61); carVisuals.add(tlBR);
+                const tlRL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.1), revMatL); tlRL.position.set(0.85, 0.5 + visualOffsetY, -2.61); carVisuals.add(tlRL);
+                const tlRR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.1), revMatR); tlRR.position.set(-0.85, 0.5 + visualOffsetY, -2.61); carVisuals.add(tlRR);
+            }
+
+            // Headlights
+            const createSpotLight = (x, z) => {
+                const spot = new THREE.SpotLight(0xffffee, 3, 100, Math.PI/4, 0.5, 1);
+                spot.position.set(x, 0.6 + visualOffsetY, z);
+                spot.target.position.set(x, 0, 10); 
+                scene.add(spot);
+                scene.add(spot.target);
+                return spot;
+            };
+            let zLight = currentCarIndex === 1 ? 3.0 : (currentCarIndex === 2 ? 3.3 : 2.8);
+            spotlights.push(createSpotLight(0.75, zLight));
+            spotlights.push(createSpotLight(-0.75, zLight));
+
+            // Exhausts & Flames
+            const exhaustGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.3, 12); exhaustGeo.rotateX(Math.PI/2);
+            const exL = new THREE.Mesh(exhaustGeo, chromeMat); exL.position.set(config.exX, 0.45 + visualOffsetY, config.exZ + 0.1); carVisuals.add(exL);
+            const exR = new THREE.Mesh(exhaustGeo, chromeMat); exR.position.set(-config.exX, 0.45 + visualOffsetY, config.exZ + 0.1); carVisuals.add(exR);
+
+            const flameGeo = new THREE.ConeGeometry(0.15, 0.8, 8);
+            flameGeo.translate(0, 0.4, 0); 
+            flameGeo.rotateX(-Math.PI/2); 
+            const flameMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+            
+            let flameL = new THREE.Mesh(flameGeo, flameMat.clone());
+            flameL.position.set(config.exX, 0.45 + visualOffsetY, config.exZ); 
+            carVisuals.add(flameL);
+            
+            let flameR = new THREE.Mesh(flameGeo, flameMat.clone());
+            flameR.position.set(-config.exX, 0.45 + visualOffsetY, config.exZ);
+            carVisuals.add(flameR);
+            
+            window.flames = [flameL, flameR];
+            window.flames.forEach(f => f.visible = false);
+
+            scene.add(carVisuals);
+
+            const tireGeo = new THREE.CylinderGeometry(config.wRadius, config.wRadius, 0.45, 24); tireGeo.rotateZ(Math.PI / 2);
+            const tireMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+            const rimGeo = new THREE.CylinderGeometry(config.wRadius * 0.65, config.wRadius * 0.65, 0.47, 16); rimGeo.rotateZ(Math.PI / 2);
+            
+            for (let i = 0; i < 4; i++) {
+                const group = new THREE.Group();
+                const tire = new THREE.Mesh(tireGeo, tireMat); const rim = new THREE.Mesh(rimGeo, chromeMat);
+                tire.castShadow = true; group.add(tire); group.add(rim);
+                scene.add(group); wheelMeshes.push(group);
+            }
+        }
+
+        function manualShift(dir) {
+            let newGear = Math.max(1, Math.min(6, currentGear + dir));
+            if (newGear !== currentGear) {
+                if(dir === -1) {
+                    window.backfireTimer = 15;
+                    playBackfireSound();
+                }
+                currentGear = newGear;
+                playShiftSound();
+                manualOverrideTimer = 300; 
+            }
+        }
+
+        function handleKey(code, isDown) {
+            if (!isPlaying || isPaused) return; 
+            
+            switch(code) {
+                case 'ArrowUp': keys.up = isDown; break;
+                case 'ArrowDown': keys.down = isDown; break;
+                case 'ArrowLeft': keys.left = isDown; break;
+                case 'ArrowRight': keys.right = isDown; break;
+                case 'ShiftLeft': case 'ShiftRight': keys.shift = isDown; break;
+                case 'Space': keys.space = isDown; break;
+                
+                case 'KeyA': 
+                    if(isDown && !keys.a) manualShift(1); 
+                    keys.a = isDown;
+                    break;
+                case 'KeyZ': case 'KeyB':
+                    if(isDown && !keys.z) manualShift(-1); 
+                    keys.z = isDown;
+                    break;
+                    
+                case 'KeyQ': 
+                    if(isDown) toggleDayNight(); 
+                    break;
+                case 'KeyR': 
+                    if(isDown) { 
+                        chassisBody.position.copy(window.spawnPosition); 
+                        chassisBody.velocity.set(0,0,0); chassisBody.angularVelocity.set(0,0,0); 
+                        chassisBody.quaternion.copy(window.spawnQuaternion); 
+                        currentGear = 0; displayedRpm = idleRpm; manualOverrideTimer = 0; window.backfireTimer = 0;
+                        lapTime = 0; raceStarted = false; window.nextCheckpointIndex = 0; window.prevDot = undefined;
+                    } 
+                    break;
+            }
+        }
+
+        function spawnSmoke(position, carVel, speed, isBrake = false) {
+            if (!sysSettings.particles) return;
+            let numParticles = isBrake ? 1 : Math.max(1, Math.floor(speed / 60)); 
+            for(let i=0; i<numParticles; i++) {
+                const particle = new THREE.Mesh(smokeGeo, smokeMat.clone());
+                particle.renderOrder = 1; 
+                let lerpFactor = Math.random();
+                let interpolatedPos = position.clone().sub(carVel.clone().multiplyScalar(lerpFactor * 0.05));
+                particle.position.copy(interpolatedPos);
+                particle.position.y -= 0.3; 
+                particle.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                scene.add(particle);
+                
+                let sizeFactor = isBrake ? 0.35 : 1.0;
+                let vX = (-carVel.x * 0.01 + (Math.random()-0.5)*0.3) * sizeFactor;
+                let vY = (Math.random()*0.15 + 0.05) * sizeFactor;
+                let vZ = (-carVel.z * 0.01 + (Math.random()-0.5)*0.3) * sizeFactor;
+                
+                particles.push({ 
+                    mesh: particle, 
+                    life: isBrake ? 0.4 : 1.0, 
+                    scale: (Math.random() * 0.3 + 0.2) * sizeFactor, 
+                    velocity: new THREE.Vector3(vX, vY, vZ) 
+                });
+            }
+        }
+
+        function updateSmoke() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.life -= 0.015; 
+                p.scale += 0.15; 
+                p.mesh.position.add(p.velocity);
+                p.mesh.scale.set(p.scale, p.scale, p.scale);
+                p.mesh.material.opacity = p.life * 0.4;
+                if (p.life <= 0) {
+                    scene.remove(p.mesh); p.mesh.material.dispose(); particles.splice(i, 1);
+                }
+            }
+        }
+
+        function spawnSparks(position, forwardVec, carVel) {
+            if (!sysSettings.particles) return;
+            for(let i=0; i<4; i++) {
+                const spark = new THREE.Mesh(sparkGeo, sparkMat);
+                spark.position.copy(position);
+                spark.renderOrder = 999; 
+                
+                let blastSpeed = 15.0 + Math.random() * 10.0;
+                let vX = carVel.x * 0.5 - forwardVec.x * blastSpeed + (Math.random()-0.5)*4.0; 
+                let vY = Math.random()*2.0 + 0.5; 
+                let vZ = carVel.z * 0.5 - forwardVec.z * blastSpeed + (Math.random()-0.5)*4.0; 
+                
+                spark.lookAt(spark.position.clone().add(new THREE.Vector3(vX, vY, vZ)));
+                scene.add(spark);
+
+                sparks.push({ mesh: spark, life: 1.0, velocity: new THREE.Vector3(vX, vY, vZ) });
+            }
+        }
+
+        function updateSparks() {
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                let s = sparks[i];
+                s.life -= 0.035; 
+                s.velocity.y -= 0.2; 
+                s.mesh.position.add(s.velocity);
+                s.mesh.material.opacity = s.life;
+                if (s.life <= 0 || s.mesh.position.y < -1) {
+                    scene.remove(s.mesh); sparks.splice(i, 1);
+                }
+            }
+        }
+
+        function updatePhysics() {
+            let config = carConfigs[currentCarIndex];
+
+            const forwardVector = new CANNON.Vec3(0, 0, 1);
+            chassisBody.quaternion.vmult(forwardVector, forwardVector);
+            const velocityDot = forwardVector.dot(chassisBody.velocity);
+            const isMovingForward = velocityDot > 0.5; 
+            const speedKmh = Math.round(chassisBody.velocity.length() * 3.6);
+
+            // Timer and laps
+            if (isPlaying && !isPaused) {
+                let carPos = new THREE.Vector3(chassisBody.position.x, chassisBody.position.y, chassisBody.position.z);
+                
+                // Multi-checkpoints logic
+                if (window.checkpoints && window.nextCheckpointIndex < window.checkpoints.length) {
+                    let cp = window.checkpoints[window.nextCheckpointIndex];
+                    if (carPos.distanceTo(cp.pos) < cp.radius) {
+                        window.nextCheckpointIndex++;
+                    }
+                }
+
+                // Start line detection
+                if (window.startLine) {
+                    let carVec = new THREE.Vector3().subVectors(carPos, window.startLine.pos);
+                    let currentDot = carVec.dot(window.startLine.normal);
+
+                    if (window.prevDot !== undefined) {
+                        if (window.prevDot < 0 && currentDot >= 0 && carPos.distanceTo(window.startLine.pos) < 120) {
+                            
+                            if (raceStarted) {
+                                if (window.checkpoints && window.nextCheckpointIndex === window.checkpoints.length) {
+                                    if (lapTime > 5) {
+                                        if (lapTime < bestTime) bestTime = lapTime;
+                                        if (currentLapScore > bestLapScore) bestLapScore = currentLapScore;
+                                        lapCount++;
+                                    }
+                                }
+                            }
+                            
+                            // Reset Lap
+                            lapTime = 0;
+                            currentLapScore = 0; 
+                            window.nextCheckpointIndex = 0;
+                            raceStarted = true;
+                        }
+                    }
+                    window.prevDot = currentDot;
+                }
+
+                if (raceStarted) {
+                    lapTime += 1 / 60; 
+                }
+            }
+
+            if (isPlaying) {
+                const speedKmhDisplay = Math.round(chassisBody.velocity.length() * 3.6);
+                const speedMphDisplay = Math.round(speedKmhDisplay * 0.621371);
+                document.getElementById('speed-display').innerText = (sysSettings.speedUnit === 'mph') ? speedMphDisplay : speedKmhDisplay;
+                document.getElementById('speed-unit').innerText = (sysSettings.speedUnit === 'mph') ? 'MPH' : 'KM/H';
+            }
+
+            let rawTargetSteer = 0;
+            let currentEngineForce = 0;
+            let currentBrakeForce = 0;
+            let targetGear = currentGear;
+            let driftAngle = 0;
+            let isDrifting = false;
+            
+            if (isPlaying && !isPaused) {
+                if (keys.left) rawTargetSteer += config.maxSteerVal;
+                if (keys.right) rawTargetSteer -= config.maxSteerVal;
+                
+                let speedFactor = Math.max(0.25, 1.0 - (speedKmh / 200)); 
+                let targetSteer = rawTargetSteer * speedFactor;
+                let angularY = chassisBody.angularVelocity.y; 
+                
+                // === NO REVERSE STEERING BUG FIX ===
+                // Zhiyou zai xiangqian xingshi shi qiyong fanda he wending fuzhu. Daoche shi jinyong, fanzhi lunzi luanbai.
+                if (isMovingForward) {
+                    if (!keys.left && !keys.right && speedKmh > 15) {
+                        targetSteer = -angularY * 1.5; 
+                    } else {
+                        targetSteer -= angularY * 0.5; 
+                    }
+                }
+                
+                targetSteer = Math.max(-config.maxSteerVal, Math.min(config.maxSteerVal, targetSteer)); 
+                currentSteer += (targetSteer - currentSteer) * 0.25; 
+
+                // Automatic Gear Shifting Formula
+                if (keys.down && !isMovingForward) {
+                    targetGear = -1; 
+                    manualOverrideTimer = 0;
+                } else if (!keys.up && speedKmh < 2) {
+                    targetGear = 0; 
+                    manualOverrideTimer = 0;
+                } else {
+                    if (manualOverrideTimer > 0) {
+                        manualOverrideTimer--;
+                        let minSpeedForGear = currentGear === 1 ? 0 : (currentGear === 2 ? 15 : (currentGear === 3 ? 40 : (currentGear === 4 ? 80 : (currentGear === 5 ? 130 : 180))));
+                        if (speedKmh < minSpeedForGear) {
+                            targetGear = Math.max(1, currentGear - 1);
+                            manualOverrideTimer = 100; 
+                        }
+                    } else {
+                        if (speedKmh < 50) targetGear = 1;
+                        else if (speedKmh < 100) targetGear = 2;
+                        else if (speedKmh < 150) targetGear = 3;
+                        else if (speedKmh < 200) targetGear = 4;
+                        else if (speedKmh < 250) targetGear = 5;
+                        else targetGear = 6;
+                    }
+                }
+
+                if (targetGear !== currentGear && targetGear > 0 && currentGear > 0) {
+                    playShiftSound();
+                }
+                currentGear = targetGear;
+
+                if (speedKmh > 40) {
+                    const vNorm = chassisBody.velocity.clone();
+                    vNorm.normalize();
+                    driftAngle = Math.acos(forwardVector.dot(vNorm)) * (180 / Math.PI);
+                    if (driftAngle > 12 && driftAngle < 160) isDrifting = true;
+                }
+
+                if (isDrifting && keys.up) {
+                    let targetDriftSpeed = Math.max(100, 240 - (Math.abs(driftAngle) * 1.5));
+                    if (speedKmh < targetDriftSpeed) {
+                        let boostForce = (targetDriftSpeed - speedKmh) * 350; 
+                        let forceWorld = new CANNON.Vec3(forwardVector.x * boostForce, 0, forwardVector.z * boostForce);
+                        chassisBody.applyForce(forceWorld, chassisBody.position);
+                    }
+                }
+
+                // Smooth Engine RPM Sound Scaling - Realistically drops and immediately rises after shifting
+                let targetRpm = idleRpm;
+                if (currentGear > 0) {
+                    let minSpeed = currentGear === 1 ? 0 : (currentGear === 2 ? 50 : (currentGear === 3 ? 100 : (currentGear === 4 ? 150 : (currentGear === 5 ? 200 : 250))));
+                    let maxSpeed = currentGear === 1 ? 50 : (currentGear === 2 ? 100 : (currentGear === 3 ? 150 : (currentGear === 4 ? 200 : (currentGear === 5 ? 250 : 330))));
+                    if (isDrifting) maxSpeed += 40;
+
+                    if (keys.up) {
+                        if (speedKmh < minSpeed && minSpeed > 0) {
+                            let progress = speedKmh / minSpeed;
+                            targetRpm = 1500 + progress * 1500; // Scales smoothly from 1500 to 3000 RPM
+                        } else {
+                            let progress = (speedKmh - minSpeed) / (maxSpeed - minSpeed);
+                            progress = Math.max(0, Math.min(1, progress));
+                            targetRpm = 3000 + progress * 5000; // Scales smoothly from 3000 to 8000 RPM
+                        }
+                    } else {
+                        targetRpm = idleRpm + (speedKmh / 300) * 2000; 
+                    }
+                    if (isDrifting && keys.up) targetRpm += 1500; 
+                } else if (currentGear === -1 && keys.down) {
+                    targetRpm = 2000 + (speedKmh / 40) * 5000;
+                }
+
+                targetRpm = Math.min(redlineRpm, Math.max(idleRpm, targetRpm));
+                displayedRpm += (targetRpm - displayedRpm) * 0.2; 
+
+                let gearText = currentGear === 0 ? "N" : (currentGear === -1 ? "R" : currentGear);
+                document.getElementById('gear-display').innerText = gearText;
+                
+                let needleRot = -135 + (displayedRpm / redlineRpm) * 270;
+                document.getElementById('needle').style.transform = `rotate(${needleRot}deg)`;
+
+                if(!keys.up && prevKeysUp && displayedRpm > 5000) {
+                    window.backfireTimer = 15; 
+                    playBackfireSound();
+                }
+                if(displayedRpm > 7800 && Math.random() < 0.1) {
+                    window.backfireTimer = 10; 
+                    playBackfireSound();
+                }
+                prevKeysUp = keys.up;
+
+                let gearMultiplier = 1.0;
+                if(currentGear === 1) gearMultiplier = 2.8; 
+                else if(currentGear === 2) gearMultiplier = 2.0;
+                else if(currentGear === 3) gearMultiplier = 1.5;
+                else if(currentGear === 4) gearMultiplier = 1.2;
+                else if(currentGear === 5) gearMultiplier = 0.95;
+                else if(currentGear === 6) gearMultiplier = 0.8;
+                else if(currentGear === -1) gearMultiplier = 2.0; 
+
+                if (keys.up) {
+                    currentEngineForce = speedKmh < 330 ? -config.baseEngineForce * gearMultiplier : 0;
+                    if(displayedRpm > 7800) currentEngineForce *= 0.3; 
+                }
+                
+                // === PROGRESSIVE BRAKING SYSTEM (线性缓慢刹车) ===
+                let isFootBraking = (keys.down && isMovingForward) || keys.space;
+                let isHandBraking = keys.shift;
+                let isBraking = isFootBraking || isHandBraking;
+
+                if (!window.brakeInputVal) window.brakeInputVal = 0;
+
+                if (isBraking) {
+                    // Accumulate braking pressure progressively over 0.5s for realistic response
+                    window.brakeInputVal = Math.min(1.0, window.brakeInputVal + 0.04);
+                } else {
+                    // Quickly release brake pressure when released
+                    window.brakeInputVal = Math.max(0.0, window.brakeInputVal - 0.1);
+                }
+
+                if (isFootBraking) {
+                    let targetMaxForce = keys.space ? 2600 : 2000;
+                    currentBrakeForce = targetMaxForce * window.brakeInputVal;
+                } else if (keys.down && !isMovingForward) {
+                    currentEngineForce = config.baseEngineForce * gearMultiplier;
+                    currentBrakeForce = 0;
+                } else {
+                    currentBrakeForce = 0;
+                }
+
+                // Smooth Anti-Dive / Counter-Pitch System to completely stabilize pitch
+                if (isBraking) {
+                    let localUp = new CANNON.Vec3(0, 1, 0);
+                    chassisBody.quaternion.vmult(localUp, localUp);
+                    if (Math.abs(localUp.z) > 0.01) {
+                        chassisBody.angularVelocity.x -= localUp.z * 5.0; // Corrective torque
+                    }
+                    chassisBody.angularVelocity.x *= 0.85; // Strong damping on forward-tilt vibrations
+                }
+            } else {
+                currentBrakeForce = 3000;
+                targetSteer = 0;
+                currentSteer += (0 - currentSteer) * 0.25;
+                displayedRpm += (idleRpm - displayedRpm) * 0.2; 
+            }
+
+            vehicle.setSteeringValue(currentSteer, 0); 
+            vehicle.setSteeringValue(currentSteer, 1); 
+            vehicle.applyEngineForce(0, 0); vehicle.applyEngineForce(0, 1);
+            vehicle.applyEngineForce(currentEngineForce, 2); vehicle.applyEngineForce(currentEngineForce, 3); 
+            
+            // Reverted braking and handbrake logic exactly to previous stable version
+            let isFootBraking = (keys.down && isMovingForward) || keys.space;
+            let isHandBraking = keys.shift;
+            let isBraking = isFootBraking || isHandBraking;
+
+            if (isPlaying && !isPaused && keys.shift) {
+                // Handbrake locks rear wheels
+                vehicle.setBrake(0, 0); vehicle.setBrake(0, 1);
+                vehicle.setBrake(1500, 2); vehicle.setBrake(1500, 3);
+            } else {
+                let frontBrake = currentBrakeForce * 0.35; 
+                let rearBrake = currentBrakeForce * 0.65;  
+                vehicle.setBrake(frontBrake, 0);  
+                vehicle.setBrake(frontBrake, 1);
+                vehicle.setBrake(rearBrake, 2);        
+                vehicle.setBrake(rearBrake, 3);
+            }
+
+            if (isPlaying && !isPaused && !keys.up && !keys.down && !keys.shift && !keys.space) {
+                vehicle.setBrake(0, 0); vehicle.setBrake(0, 1); vehicle.setBrake(0, 2); vehicle.setBrake(0, 3);
+            }
+
+            // Restore wheels slip parameters back to previous stable parameters
+            for (let w = 0; w < 4; w++) {
+                if (w < 2) {
+                    vehicle.wheelInfos[w].frictionSlip = config.frictFront;
+                } else {
+                    vehicle.wheelInfos[w].frictionSlip = isHandBraking ? 0.5 : config.frictBack;
+                }
+            }
+
+            let currentVel = new THREE.Vector3(chassisBody.velocity.x, chassisBody.velocity.y, chassisBody.velocity.z);
+
+            // Drifting and smoke emissions
+            if (isPlaying && !isPaused && isDrifting) {
+                document.getElementById('drift-score').innerText = "POWER DRIFT! " + Math.round(driftAngle) + "°";
+                spawnSmoke(wheelMeshes[2].position, currentVel, speedKmh); 
+                spawnSmoke(wheelMeshes[3].position, currentVel, speedKmh); 
+                
+                if (raceStarted) currentLapScore += Math.floor((driftAngle * speedKmh) / 100);
+            } else {
+                document.getElementById('drift-score').innerText = "";
+            }
+
+            // 4-wheel Brake Skid smoke
+            if (isPlaying && !isPaused && isBraking && speedKmh > 10) {
+                for (let w = 0; w < 4; w++) {
+                    spawnSmoke(wheelMeshes[w].position, currentVel, speedKmh, true);
+                }
+            }
+
+            if (isPlaying && !isPaused) {
+                updateAudioDynamic(displayedRpm, isDrifting, driftAngle, speedKmh);
+                updateRaceStatsUI();
+            }
+
+            if((isPlaying && !isPaused) || inGarage) {
+                if(window.backfireTimer > 0) {
+                    window.backfireTimer--;
+                    window.flames.forEach(f => {
+                        f.visible = true;
+                        let fScale = Math.random() * 0.8 + 0.4; 
+                        f.scale.set(fScale, fScale, fScale); 
+                        f.material.color.setHex(Math.random() > 0.4 ? 0xff4400 : 0x00ccff); 
+                    });
+
+                    if (window.backfireTimer % 3 === 0) { 
+                        let forwardDir = new THREE.Vector3(forwardVector.x, forwardVector.y, forwardVector.z);
+                        let exhaustOffset = forwardDir.clone().multiplyScalar(config.sparkZ); 
+                        
+                        let carPos = new THREE.Vector3(chassisBody.position.x, chassisBody.position.y, chassisBody.position.z);
+                        
+                        let exhaustL = carPos.clone().add(exhaustOffset).add(new THREE.Vector3(config.exX, -0.2, 0).applyQuaternion(carVisuals.quaternion));
+                        let exhaustR = carPos.clone().add(exhaustOffset).add(new THREE.Vector3(-config.exX, -0.2, 0).applyQuaternion(carVisuals.quaternion));
+                        
+                        spawnSparks(exhaustL, forwardDir, currentVel);
+                        spawnSparks(exhaustR, forwardDir, currentVel);
+                    }
+                } else {
+                    window.flames.forEach(f => f.visible = false);
+                }
+            }
+
+            // Sync tail light emissive
+            if (window.carLightMats) {
+                window.carLightMats.brake.forEach(mat => {
+                    mat.emissive.setHex(isBraking ? 0xff0000 : (isDay ? 0x220000 : 0x770000));
+                    mat.emissiveIntensity = isBraking ? 2.0 : 1.0;
+                });
+                let isReversing = currentGear === -1 && keys.down;
+                window.carLightMats.reverse.forEach(mat => {
+                    mat.emissive.setHex(isReversing ? 0xffffff : 0x000000);
+                });
+            }
+
+            let lightZ = currentCarIndex === 1 ? 3.0 : (currentCarIndex === 2 ? 3.3 : 2.8);
+            let lightPos1 = new THREE.Vector3(0.75, 0.6, lightZ).applyQuaternion(carVisuals.quaternion).add(chassisBody.position);
+            let lightTarget1 = new THREE.Vector3(0.75, 0, lightZ + 10).applyQuaternion(carVisuals.quaternion).add(chassisBody.position);
+            spotlights[0].position.copy(lightPos1);
+            spotlights[0].target.position.copy(lightTarget1);
+
+            let lightPos2 = new THREE.Vector3(-0.75, 0.6, lightZ).applyQuaternion(carVisuals.quaternion).add(chassisBody.position);
+            let lightTarget2 = new THREE.Vector3(-0.75, 0, lightZ + 10).applyQuaternion(carVisuals.quaternion).add(chassisBody.position);
+            spotlights[1].position.copy(lightPos2);
+            spotlights[1].target.position.copy(lightTarget2);
+
+            world.step(1/60);
+            updateSmoke(); 
+            updateSparks(); 
+
+            carVisuals.position.copy(chassisBody.position);
+            carVisuals.quaternion.copy(chassisBody.quaternion);
+
+            for (let i = 0; i < vehicle.wheelInfos.length; i++) {
+                vehicle.updateWheelTransform(i);
+                const transform = vehicle.wheelInfos[i].worldTransform;
+                wheelMeshes[i].position.copy(transform.position);
+                wheelMeshes[i].quaternion.copy(transform.quaternion);
+            }
+        }
+
+        function updateCamera() {
+            const carPosition = new THREE.Vector3().copy(carVisuals.position);
+            const carRotation = new THREE.Quaternion().copy(carVisuals.quaternion);
+            
+            if (inGarage) {
+                if(!isDragging) {
+                    garageAngle += 0.003; 
+                }
+                camera.position.set(carPosition.x + Math.sin(garageAngle) * 8, carPosition.y + 2.5 + (cameraPitch * 5), carPosition.z + Math.cos(garageAngle) * 8);
+                camera.lookAt(carPosition.clone().add(new THREE.Vector3(0, 1, 0)));
+                return;
+            }
+
+            if(!isDragging) {
+                cameraAngleX *= 0.85; 
+                cameraPitch = cameraPitch * 0.85 + 0.15 * 0.15; 
+            }
+
+            const dynamicRadius = 8 + (chassisBody.velocity.length() * 0.04); 
+            const offsetX = Math.sin(cameraAngleX) * dynamicRadius;
+            const offsetY = 2.5 + (cameraPitch * 8); 
+            const offsetZ = -Math.cos(cameraAngleX) * dynamicRadius;
+
+            const cameraOffset = new THREE.Vector3(offsetX, offsetY, offsetZ);
+            cameraOffset.applyQuaternion(carRotation); 
+            camera.position.lerp(carPosition.clone().add(cameraOffset), 0.2); 
+            camera.lookAt(carPosition.clone().add(new THREE.Vector3(0, 1.5, 0)));
+        }
+
+        function animate() { requestAnimationFrame(animate); updatePhysics(); updateCamera(); renderer.render(scene, camera); }
+    </script>
+</body>
+</html>
